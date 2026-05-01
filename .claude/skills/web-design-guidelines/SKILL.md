@@ -1,24 +1,68 @@
 ---
 name: web-design-guidelines
-description: Vercel's web-design-guidelines skill — general web UI quality bar. Vendored from vercel-labs/agent-skills.
-when_to_use: As a check on workshop output for general web-quality issues (focus states, contrast, responsive behavior, semantic HTML).
+description: Review UI code for Web Interface Guidelines compliance. Use when asked to "review my UI", "check accessibility", "audit design", "review UX", or "check my site against best practices".
+source: https://github.com/vercel-labs/agent-skills/tree/main/skills/web-design-guidelines (vendored verbatim)
+metadata:
+  author: vercel
+  version: "1.0.0"
+  argument-hint: <file-or-pattern>
 ---
 
-# Web design guidelines (vendored placeholder)
+# Web Interface Guidelines
 
-> **Vendor source.** This skill is intended to be vendored from `vercel-labs/agent-skills` (https://github.com/vercel-labs/agent-skills). The implementer must replace this placeholder with the upstream content in step 6 of the implementation order.
+Review files for compliance with Web Interface Guidelines.
 
-## Working bar (placeholder)
+## How It Works
 
-- **Focus states are not optional.** Every interactive element shows a visible focus ring. Tailwind's `focus-visible:` modifier is the right surface.
-- **Contrast meets WCAG AA.** 4.5:1 for body, 3:1 for large text, 3:1 for non-text UI affordances. The `axe` Playwright project enforces this.
-- **Tap targets ≥ 24×24 dp** (preferably 44×44 for primary actions on touch).
-- **Responsive by default.** No fixed-pixel widths on layout containers. Use `clamp()` or fluid type / spacing.
-- **Semantic HTML.** `<button>` for buttons, `<a>` for links, `<nav>` for navigation, `<main>` once per page.
-- **Reduced motion.** Respect `prefers-reduced-motion: reduce` for any non-essential animation.
-- **Forms.** Labels are visible, not just placeholders. Error messages are tied to inputs via `aria-describedby`.
-- **Images.** `alt` text required; decorative images get `alt=""` (not omitted).
+1. Fetch the latest guidelines from the source URL below
+2. Read the specified files (or prompt user for files/pattern)
+3. Check against all rules in the fetched guidelines
+4. Output findings in the terse `file:line` format
 
-## Tabletop-RPG application
+## Guidelines Source
 
-The aesthetic doesn't excuse bad accessibility. Parchment-on-cream still has to hit AA — and that's the *first* thing the design critic checks (per CLAUDE.md item 7: tests are veto signals). When the aesthetic fights AA, the aesthetic loses; the prompt-translator routes the critique to `screen.edit` with `--aspect color`.
+Fetch fresh guidelines before each review:
+
+```
+https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md
+```
+
+Use WebFetch to retrieve the latest rules. The fetched content contains all the rules and output format instructions.
+
+## Usage
+
+When a user provides a file or pattern argument:
+1. Fetch guidelines from the source URL above
+2. Read the specified files
+3. Apply all rules from the fetched guidelines
+4. Output findings using the format specified in the guidelines
+
+If no files specified, ask the user which files to review.
+
+---
+
+## Tabletop-RPG application (project addendum)
+
+The Web Interface Guidelines pull from a separate Vercel-Labs repo and refresh
+each invocation. They cover the standard contemporary web-quality bar — focus
+states, contrast, semantic HTML, responsive behavior, reduced-motion support.
+
+For our project:
+
+- **AA contrast is veto-grade**, per CLAUDE.md item 7. The `design-critic`
+  subagent must downgrade `SHIP` to `REVISE_DESIGN` when contrast fails on a
+  parchment-on-cream surface, regardless of how on-brand the render looks.
+- **Focus rings are not optional** in any aesthetic. The grimdark and arcane
+  manifests describe their focus-ring styling (an ink-blot expansion vs a
+  prismatic ripple) — don't drop the affordance to honor mood.
+- **Reduced motion** is non-negotiable. Each aesthetic manifest specifies a
+  reduced-motion fallback (e.g., parchment's ink-bleed crossfade falls back to
+  a simple opacity fade). Implement both branches.
+- **Semantic HTML** for game UI: `<button>` for actions ("Roll", "End turn",
+  "Edit character"), `<a>` for navigation between sheet sections, `<dialog>`
+  for spell card detail modals when used (or, per `impeccable`'s advice,
+  exhaust inline alternatives first).
+
+When this skill conflicts with `frontend-design`, this skill (and the upstream
+Web Interface Guidelines) wins on accessibility and semantics; `frontend-design`
+wins on aesthetic and typographic decisions.

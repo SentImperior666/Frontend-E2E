@@ -37,10 +37,13 @@
     "sync:target-assets": "tsx scripts/sync-target-assets.ts",
     "extract:target-theme": "tsx scripts/extract-target-theme.ts",
     "figma:publish": "tsx scripts/figma-publish-frame.ts",
+    "figma:publish:prepare": "tsx scripts/figma-publish-frame.ts prepare",
+    "figma:publish:update-mapping": "tsx scripts/figma-publish-frame.ts update-mapping",
     "figma:export-baselines": "tsx scripts/figma-export-baselines.ts",
     "parity:capture": "tsx scripts/parity-capture.ts"
   },
   "dependencies": {
+    "@google/stitch-sdk": "^0.1.1",
     "next": "^15.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

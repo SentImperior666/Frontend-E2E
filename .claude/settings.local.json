@@ -1,7 +1,20 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node *)"
+      "Bash(node *)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:discuss.ai.google.dev)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(curl -sf https://raw.githubusercontent.com/anthropics/skills/main/skills/frontend-design/SKILL.md -o /tmp/frontend-design-SKILL.md)",
+      "Read(//tmp/**)",
+      "Bash(curl -sf https://api.github.com/repos/vercel-labs/agent-skills/contents/ -H \"Accept: application/vnd.github.v3+json\")",
+      "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); [print\\(d['name'],d['type']\\) for d in data]\")",
+      "Bash(curl -sf https://api.github.com/repos/vercel-labs/agent-skills/contents/skills -H \"Accept: application/vnd.github.v3+json\")",
+      "Bash(curl -sf https://api.github.com/repos/pbakaus/impeccable/contents/ -H \"Accept: application/vnd.github.v3+json\")",
+      "Bash(curl -sf https://api.github.com/repos/pbakaus/impeccable/contents/.claude/skills -H \"Accept: application/vnd.github.v3+json\")",
+      "Bash(curl -sf https://raw.githubusercontent.com/pbakaus/impeccable/main/.claude/skills/impeccable/SKILL.md -o /tmp/impeccable-SKILL.md)",
+      "WebFetch(domain:www.figma.com)",
+      "WebFetch(domain:developers.figma.com)"
     ]
   }
 }

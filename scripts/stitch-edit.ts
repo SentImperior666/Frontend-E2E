@@ -4,6 +4,9 @@
  *
  * Usage:
  *   pnpm stitch:edit -- --story <storyId> --feedback "<editPrompt>" --aspect color
+ *
+ * `--aspect` accepts the operator-friendly aliases (color, layout, fonts,
+ * images, text). The wrapper translates to the SDK's UPPERCASE_SNAKE values.
  */
 import path from "node:path";
 import { spawn } from "node:child_process";
@@ -11,7 +14,7 @@ import { writeFile } from "node:fs/promises";
 import { parseArgs, requireArg } from "./_lib/args.js";
 import { appendJsonl, readJson, ensureDir } from "./_lib/fs.js";
 import { STITCH_DIR, screenDir } from "./_lib/paths.js";
-import { getStitchClient, asUrl } from "./_lib/stitch.js";
+import { getStitchClient, toAspect, type DeviceType, ASPECT_ALIASES } from "./_lib/stitch.js";
 
 async function downloadToFile(url: string, dest: string): Promise<void> {
   const res = await fetch(url);
@@ -27,19 +30,15 @@ function runScript(scriptName: string, args: string[]): Promise<void> {
   });
 }
 
-const ALLOWED_ASPECTS = new Set(["layout", "color", "fonts", "images", "text"]);
-
 async function main(): Promise<void> {
   const args = parseArgs();
   const storyId = requireArg(args, "story");
   const feedback = requireArg(args, "feedback");
-  const aspect = requireArg(args, "aspect");
-  if (!ALLOWED_ASPECTS.has(aspect)) {
-    throw new Error(`--aspect must be one of ${[...ALLOWED_ASPECTS].join("|")}, got ${aspect}`);
-  }
+  const aspectAlias = requireArg(args, "aspect");
+  const aspect = toAspect(aspectAlias); // throws on unknown alias.
 
   const dir = screenDir(storyId);
-  const screenJson = await readJson<{ id: string; device: string }>(path.join(dir, "screen.json"));
+  const screenJson = await readJson<{ id: string; device: DeviceType }>(path.join(dir, "screen.json"));
   if (!screenJson?.id) throw new Error(`No screen.json for story=${storyId}; run /design-new first.`);
 
   const projectsRecord = (await readJson<Record<string, { id: string }>>(path.join(STITCH_DIR, "projects.json"))) ?? {};
@@ -48,21 +47,14 @@ async function main(): Promise<void> {
   if (!projectId) throw new Error("No Stitch project; run `pnpm stitch:init` first.");
 
   const client = await getStitchClient();
-  const project = await client.project(projectId);
-  // Re-resolve the screen handle. The SDK exact API may differ; this assumes
-  // there's a way to load a screen by id from the project. Implementer: reconcile.
-  const screenLoader = (project as unknown as { screen?: (id: string) => Promise<unknown> }).screen;
-  if (!screenLoader) {
-    throw new Error("Stitch SDK does not expose project.screen(id); reconcile with the SDK.");
-  }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const screen: any = await screenLoader.call(project, screenJson.id);
+  const project = client.project(projectId);
+  const screen = await project.getScreen(screenJson.id);
 
-  console.log(`stitch-edit: aspect=${aspect}, story=${storyId}, applying edit...`);
-  const edited = await screen.edit(feedback);
+  console.log(`stitch-edit: aspect=${aspect} (alias=${aspectAlias}), story=${storyId}, applying edit...`);
+  const edited = await screen.edit(feedback, screenJson.device);
 
-  const htmlUrl = asUrl(await edited.getHtml());
-  const imgUrl = asUrl(await edited.getImage());
+  const htmlUrl = await edited.getHtml();
+  const imgUrl = await edited.getImage();
 
   await downloadToFile(htmlUrl, path.join(dir, "html", "index.html"));
   await downloadToFile(imgUrl, path.join(dir, "screenshot.png"));
@@ -71,6 +63,7 @@ async function main(): Promise<void> {
     op: "edit",
     at: new Date().toISOString(),
     aspect,
+    aspectAlias,
     feedback,
     newScreenId: edited.id,
   });
@@ -80,6 +73,9 @@ async function main(): Promise<void> {
 
   console.log(`stitch-edit: edit applied; baselines refreshed.`);
 }
+
+// Surface the aliases on import side for help-style callers.
+void ASPECT_ALIASES;
 
 main().catch((err) => {
   console.error(err);

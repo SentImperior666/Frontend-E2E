@@ -8,7 +8,7 @@ import { writeFile } from "node:fs/promises";
 import { parseArgs, requireArg, optionalArg } from "./_lib/args.js";
 import { ensureDir, appendJsonl, readJson } from "./_lib/fs.js";
 import { STITCH_DIR, screenDir } from "./_lib/paths.js";
-import { getStitchClient, asUrl, type CreativeRange, type Aspect } from "./_lib/stitch.js";
+import { getStitchClient, toAspects, type CreativeRange, type DeviceType } from "./_lib/stitch.js";
 
 const VALID_RANGES: CreativeRange[] = ["REFINE", "EXPLORE", "REIMAGINE"];
 
@@ -24,13 +24,12 @@ async function main(): Promise<void> {
   const storyId = requireArg(args, "story");
   const range = (optionalArg(args, "range", "EXPLORE") ?? "EXPLORE") as CreativeRange;
   if (!VALID_RANGES.includes(range)) throw new Error(`--range must be one of ${VALID_RANGES.join("|")}`);
-  const aspectsRaw = optionalArg(args, "aspects");
-  const aspects = aspectsRaw ? (aspectsRaw.split(",").map((s) => s.trim()) as Aspect[]) : undefined;
+  const aspects = toAspects(optionalArg(args, "aspects")); // operator passes lowercase aliases
   const variantCount = Math.max(1, Math.min(5, Number(optionalArg(args, "count", "3"))));
   const promptOverride = optionalArg(args, "prompt");
 
   const dir = screenDir(storyId);
-  const screenJson = await readJson<{ id: string; device: string }>(path.join(dir, "screen.json"));
+  const screenJson = await readJson<{ id: string; device: DeviceType }>(path.join(dir, "screen.json"));
   if (!screenJson?.id) throw new Error(`No screen.json for story=${storyId}; run /design-new first.`);
 
   const projectsRecord = (await readJson<Record<string, { id: string }>>(path.join(STITCH_DIR, "projects.json"))) ?? {};
@@ -39,22 +38,25 @@ async function main(): Promise<void> {
   if (!projectId) throw new Error("No Stitch project; run `pnpm stitch:init` first.");
 
   const client = await getStitchClient();
-  const project = await client.project(projectId);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const screen: any = await (project as any).screen(screenJson.id);
+  const project = client.project(projectId);
+  const screen = await project.getScreen(screenJson.id);
 
   const prompt = promptOverride ?? "";
-  const variants = await screen.variants(prompt, { creativeRange: range, aspects, variantCount });
+  const variants = await screen.variants(
+    prompt,
+    { creativeRange: range, aspects, variantCount },
+    screenJson.device,
+  );
 
   const variantsDir = path.join(dir, "variants");
   await ensureDir(variantsDir);
   const tiles: { idx: number; screenshotRel: string; htmlRel: string }[] = [];
   for (let i = 0; i < variants.length; i++) {
-    const v = variants[i];
+    const v = variants[i]!;
     const vDir = path.join(variantsDir, String(i));
     await ensureDir(vDir);
-    const htmlUrl = asUrl(await v.getHtml());
-    const imgUrl = asUrl(await v.getImage());
+    const htmlUrl = await v.getHtml();
+    const imgUrl = await v.getImage();
     await downloadToFile(htmlUrl, path.join(vDir, "index.html"));
     await downloadToFile(imgUrl, path.join(vDir, "screenshot.png"));
     tiles.push({

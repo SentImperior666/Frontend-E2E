@@ -1,79 +1,168 @@
 ---
 name: stitch-prompting
-description: How to write prompts for the Stitch SDK so generated screens land on-brand for the tabletop RPG site, with the prompt-guide rules transcribed verbatim.
+description: How to write prompts for the Stitch SDK so generated screens land on-brand for the tabletop RPG site. Codifies the canonical Stitch Prompt Guide rules with attribution, plus our project-specific harness rules (one-aspect edits, single anchor per prompt, aesthetic continuity).
 when_to_use: Whenever assembling a prompt for `stitch-generate`, `stitch-edit`, or `stitch-variants`. Triggered by `/design-loop`, `/design-edit`, `/design-variants`, `/design-from-feedback`, and the `feedback-translator` subagent.
+source_canonical: https://discuss.ai.google.dev/t/stitch-prompt-guide/83844
 ---
 
 # Stitch prompting
 
-> **Source.** This skill paraphrases and references the Stitch Prompt Guide on the Google AI Developers Forum (https://discuss.ai.google.dev/t/stitch-prompt-guide/83844). The implementer must read that guide and copy the canonical wording verbatim into this file with attribution before relying on it for production prompts. Until that transcription is done, this skill is a working scaffold — the rules below restate the guide's intent in our own words but do not replace the upstream text.
+This skill codifies the canonical **Stitch Prompt Guide** (Google AI Developers Forum) plus the harness's project-specific rules layered on top.
 
-## Core rules
+## Part A — Canonical Stitch Prompt Guide rules
 
-### 1. Three-layer structure
-Every Stitch prompt has three layers, in order:
+> Quoted/paraphrased from https://discuss.ai.google.dev/t/stitch-prompt-guide/83844 ("Stitch Prompt Guide"). Treat the upstream discussion as authoritative — re-read before any major prompt-engineering change. Phrases marked with quotation marks are direct quotes from the guide; the rest is faithful summary.
 
-1. **Layout structure.** Spatial bones. "Header above a 3-column grid", "left rail, center canvas, right rail", "stat block at top, equipment middle, spell list at bottom on mobile". Talk regions, not pixels.
-2. **Ambiance adjectives.** Mood, materiality, era, intent. "Warm, candlelit, ornate, slightly aged parchment with foil-stamped headings, similar to D&D Beyond's spell card panels."
-3. **Mock data.** Realistic content so the model can size cells correctly. Sample names ("Thrain Stonebeard"), stat values ("STR 16, DEX 12, CON 14"), spell descriptions ("Magic Missile — 1st-level evocation, 1 action, 120 ft."). Two-word placeholders break layout reasoning; full sentences fix it.
+### Starting approach
 
-### 2. Reference mature tools
-Anchor the style to a known artifact. The model has seen these and will produce more consistent output if told:
-- "spell list reminiscent of Roll20's character compendium"
-- "world-map panel like Foundry VTT's scene navigator"
-- "lobby card density similar to Discord stage channels"
-- "character sheet density like D&D Beyond's full sheet"
-- "dice tray like Foundry's, but on a pewter plate instead of slate"
+> "Choose to start with a broad concept or specific details. For complex apps, start high-level and then drill down on details screen by screen."
 
-Use exactly one anchor per prompt unless the brief explicitly requests a hybrid.
+- **High-level start.** "Start with a general idea." Example: `"An app for marathon runners."`
+- **Detailed start.** "Describe core functionalities for a better starting point." Include the major capabilities (community engagement, training advice, race discovery, etc.) directly in the brief so Stitch builds the bones with structure that fits.
 
-### 3. One change per edit
-`screen.edit(prompt)` must change exactly one of: `layout`, `color`, `fonts`, `images`, `text`. The `/design-edit` command refuses multi-aspect feedback and asks you to split. Reasons:
-- Multi-change edits collapse into incoherent renders ("darker AND wider" produces neither well).
-- Single-change edits are trivially revertible and easy to A/B in `screen.variants`.
-- The history strip in `.stitch/screens/<storyId>/edit-history.jsonl` becomes legible.
+### Vibe setting
 
-When the user gives multi-aspect feedback, queue the changes and apply them sequentially, running the inner code-iteration loop between each.
+> "Use adjectives to define the app's feel (influences colors, fonts, imagery)."
 
-### 4. High-level then drill down
-First call sets the bones — overall layout, primary surface, dominant colorway, headline content. Subsequent edits refine sections **by name** ("the stat block on the left", "the equipped-items strip", not "that thing in the middle"). Naming the region forces the model to localize its change.
+Examples from the guide: `"vibrant and encouraging"`, `"minimalist and focused"`. Adjectives carry a lot — the model interprets them as joint hints across color, typography, and imagery.
 
-### 5. Don't over-specify pixel values
-Stitch reasons about intent, not dimensions. `padding: 14px` in a prompt is noise; "comfortable padding, generous around headings" is signal. Pixel-level work belongs in the inner code-iteration loop, where Lost Pixel can measure it.
+### Incremental changes (the most load-bearing rule)
 
-### 6. Device hint matters
-- `DESKTOP` for desk-bound RPG screens (character sheet, world journal, combat tracker on a laptop).
-- `MOBILE` for companion screens (initiative tracker on a phone at the table, dice roller used between turns).
-- Do **not** scale a desktop layout down to mobile — re-prompt with `MOBILE` device type. Single-source mobile is too low-fidelity.
+> "Stitch performs best with clear, specific instructions. Focus on one screen/component and make one or two adjustments per prompt."
+
+> "Be Specific: Tell Stitch _what_ to change and _how_."
+
+### Pro tips (verbatim)
+
+- "Be Clear & Concise: Avoid ambiguity"
+- "Iterate & Experiment: Refine designs with further prompts"
+- "One Major Change at a Time: Easier to see impact and adjust"
+- "Use UI/UX Keywords: (e.g., 'navigation bar,' 'call-to-action button,' 'card layout')"
+- "Reference Elements Specifically"
+- "Review & Refine: If a change isn't right, rephrase or be more targeted"
+
+### Anti-patterns (from documented user experience in-thread, attributed to user `tempo`)
+
+- "Do **not** mix layout changes and UI components in the same prompt."
+- "Stitch **does not remember** your previous design unless you're extremely precise and incremental."
+- Combining multiple changes in one prompt causes Stitch to "recreate the entire layout, breaking everything."
+- Long prompts (over 5,000 characters) lead to "Stitch consistently **omits some components**."
+- **Recommended approach:** "Use short, focused prompts — one change at a time. Do not combine features."
+
+### Examples from the guide
+
+**Color**:
+- Specific: `"Change primary color to forest green."`
+- Mood-based: `"Update theme to a warm, inviting color palette."`
+
+**Typography**:
+- `"Use a playful sans-serif font."`
+- `"Change headings to a serif font."`
+
+**Image modifications**:
+- `"Change background of [all] [product] images on [landing page] to light taupe."`
+- `"On 'Team' page, image of 'Dr. Carter (Lead Dentist)': update her lab coat to black."`
+
+**Language**:
+- `"Switch all product copy and button text to Spanish."`
+
+**Multi-prompt workflow (factory dashboard example, from the guide):**
+1. Create the table structure with two-row tasks.
+2. Add filter dropdowns separately.
+3. Align the title and add the icon separately.
+
+The guide's discipline is to split. Always.
+
+### Editing vs. generating
+
+- Start with high-level concepts for initial generation.
+- Use screen-by-screen iteration for refinement.
+- "Save screenshots after each successful change to prevent unexpected resets."
+- Begin with broad ideas, then "drill down on details screen by screen."
+
+### Device-type guidance
+
+The guide does not give explicit device-type guidance. The harness's project rule (Part B) fills that gap: re-prompt with `MOBILE` for companion screens; do not scale a desktop layout down.
+
+---
+
+## Part B — Harness rules (project-local, layered on top of the guide)
+
+These rules are how the guide's principles become specifically actionable in this codebase.
+
+### B.1 Three-layer prompt assembly
+
+When the harness assembles a prompt for `stitch-generate`, it stacks three layers in order:
+
+1. **Layout structure** (from `prompts/stitch/<template>.md`). Spatial bones in prose. Names regions ("left rail", "center column", "right rail"). Implements the guide's "use UI/UX keywords" rule.
+2. **Vibe / ambiance adjectives** (from `prompts/aesthetics/<key>.md`). Implements the guide's "vibe setting" rule.
+3. **Mock data** (from the template's `## Mock data` section). Realistic, sized content so the model sizes cells correctly. The guide implies this with its "Reference elements specifically" rule; we make it explicit.
+
+Plus a single appended **mature-tool style anchor** drawn from the template's `style_anchors` frontmatter (e.g., `"character sheet density like D&D Beyond's full sheet"`). One anchor maximum per prompt — multiple anchors blur the model's target.
+
+### B.2 One-aspect edits (enforced)
+
+The `/design-edit` command refuses multi-aspect feedback. The guide's "one major change at a time" rule is enforced here as a hard refusal — not a request, not a preference. The aspects map onto the SDK's `Aspect` enum:
+
+| Operator alias | SDK `Aspect` value |
+|---|---|
+| `layout` | `LAYOUT` |
+| `color` | `COLOR_SCHEME` |
+| `images` | `IMAGES` |
+| `fonts` | `TEXT_FONT` |
+| `text` | `TEXT_CONTENT` |
+
+Translation happens at the SDK boundary in `scripts/_lib/stitch.ts`'s `toAspect()`. Operators always use the lowercase aliases.
+
+When a user gives multi-aspect feedback ("darker AND wider AND switch the font"), queue the changes:
+
+1. `/design-edit ... --aspect color`
+2. `/redesign-iter` (re-converge code against new baseline)
+3. `/design-edit ... --aspect layout`
+4. `/redesign-iter`
+5. `/design-edit ... --aspect fonts`
+6. `/redesign-iter`
+
+### B.3 Name the region
+
+The guide says "Reference Elements Specifically." The `feedback-translator` subagent enforces this — it rewrites prose critique like "the spell list looks too modern" into "On the spell cards in the right rail, ...". A prompt without a named region is rejected.
+
+### B.4 No pixel values
+
+Stitch reasons about intent, not dimensions. `padding: 14px` in a prompt is noise; "comfortable padding, generous around headings" is signal. Pixel-level work is the inner code-iteration loop's job, where Lost Pixel measures it.
+
+### B.5 Device-hint discipline
+
+- `DESKTOP` for desk-bound screens (character sheet, world journal, combat tracker on a laptop).
+- `MOBILE` for companion screens (initiative tracker on a phone at the table, dice roller used between turns at the table).
 - `TABLET` for the rare middle case (battle map on iPad).
+- **Do not** scale a desktop layout down to mobile — re-prompt with `MOBILE` device type. Single-source mobile is too low-fidelity (extends the canonical guide's silence on this).
 
-### 7. Keep the aesthetic key consistent
-Every screen carries an aesthetic key (`high-fantasy-parchment`, `gritty-grimdark`, etc.) — see `prompts/aesthetics/`. Switching the key mid-edit produces a Frankenstein render. To change the key, generate a new screen; do not edit across the boundary.
+### B.6 Aesthetic continuity
 
-## Anti-patterns
+Re-using a screen's aesthetic key across screens is **mandatory**. Switching the key mid-edit produces incoherent output. To change the key, generate a new screen; do not edit across the boundary. The harness warns when a new screen specifies a different key from sibling screens (CLAUDE.md §13).
 
-| Anti-pattern | Why it fails | Fix |
-|---|---|---|
-| Single-word prompts ("better", "cooler") | No referent | Three-layer structure |
-| Contradictory adjectives ("minimal yet ornate") | Model averages → muddy | Pick one mood, deepen it |
-| Multi-aspect edits ("change colors and rework layout") | Incoherent render | Split into sequential edits |
-| Pixel-level specs in design prompt | Wasted tokens; ignored | Move to code loop |
-| Switching aesthetic key mid-edit | Frankenstein | New screen for new key |
-| Generic mock data ("Lorem ipsum") | Wrong cell sizes | Real-shaped placeholders |
-| Mobile-as-scaled-desktop prompt | Cramped, broken layout | Re-prompt with MOBILE device |
+### B.7 5,000-character ceiling
 
-## Prompt assembly
+The guide warns that prompts over ~5,000 characters cause Stitch to omit components. The prompt assembler in the harness should refuse (or warn) when the assembled prompt exceeds this length. Long mock-data blocks are the most common cause — trim aggressively rather than letting the assembler hit the ceiling.
 
-Templates live in `prompts/stitch/<screen-type>.md`. Aesthetic manifests live in `prompts/aesthetics/<key>.md`. The skill's job at runtime is to:
+### B.8 Contradiction guard
 
-1. Load the template for the screen type.
-2. Load the aesthetic manifest for the requested key.
-3. Substitute the `{{BRIEF}}` placeholder with the user's prose brief.
-4. Substitute the `{{MOCK_DATA}}` placeholder with the template's mock data block.
-5. Concatenate: `[layout from template] + [aesthetic ambiance from manifest] + [mock data]`.
-6. Append a single-line anchor (mature-tool reference) drawn from the template's `style_anchors` block.
-7. Verify the assembled prompt does not contain contradictions (regex check for known opposed-pair adjectives like "minimal" + "ornate").
+The assembler runs a regex check on the assembled prompt for known opposed-pair adjectives (e.g., "minimal" + "ornate", "maximalist" + "restrained"). On match, it refuses. The guide doesn't codify this, but our aesthetic manifests fail predictably when prompts contradict themselves.
 
-## When invoked by `feedback-translator`
+### B.9 Compensating verbally for unmapped DesignSystem variables
 
-The translator receives prose critique. Its output is a one-aspect Stitch edit prompt. Apply rules 1, 3, 4, and 5 strictly — especially "name the region": rewrite "the cards look modern" as "the spell cards' frames need illuminated drop-caps and a subtle aged-paper texture; keep their layout".
+The Stitch DesignSystem is coarser than Figma's variable graph. When `stitch-sync-design-system.ts` logs unmapped variables (e.g., shadows, radii), prompts must compensate verbally with hex codes or named values, e.g., `"use the muted parchment background #f3e9d2"` rather than `"use the parchment-100 surface"`. See `docs/stitch-playbook.md`.
+
+---
+
+## Part C — When invoked by `feedback-translator`
+
+The translator receives prose critique and outputs a single-aspect Stitch edit prompt. It applies, in priority order:
+
+1. **B.2** (one-aspect rule) — refuses multi-aspect critiques.
+2. **B.3** (name the region) — rewrites vague references.
+3. **A.4** ("Be Specific") — turns "it feels off" into "the spell cards in the right rail need illuminated drop-caps and a subtle aged-paper texture; keep the existing card layout."
+4. **B.4** (no pixels) — strips any pixel values from the operator's input.
+
+Output format is JSON conformant to the agent's `output` contract — see `.claude/agents/feedback-translator.md`.

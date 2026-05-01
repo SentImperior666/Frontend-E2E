@@ -77,7 +77,7 @@ async function main(): Promise<void> {
   const { ds, unmapped } = toStitchDesignSystem(tokens);
 
   const client = await getStitchClient();
-  const project = await client.project(projectId);
+  const project = client.project(projectId);
   await project.createDesignSystem(ds);
 
   const snapshot: DesignSystemSnapshot = {

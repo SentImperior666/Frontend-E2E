@@ -14,7 +14,7 @@ import { spawn } from "node:child_process";
 import { parseArgs, requireArg, optionalArg } from "./_lib/args.js";
 import { ensureDir, appendJsonl, writeJsonAtomic, readJson } from "./_lib/fs.js";
 import { STITCH_DIR, screenDir } from "./_lib/paths.js";
-import { getStitchClient, asUrl, type DeviceType } from "./_lib/stitch.js";
+import { getStitchClient, type DeviceType } from "./_lib/stitch.js";
 
 async function downloadToFile(url: string, dest: string): Promise<void> {
   const res = await fetch(url);
@@ -47,7 +47,7 @@ async function main(): Promise<void> {
   if (!projectId) throw new Error("No Stitch project initialized. Run `pnpm stitch:init` first.");
 
   const client = await getStitchClient();
-  const project = await client.project(projectId);
+  const project = client.project(projectId);
 
   console.log(`stitch-generate: generating screen for story=${storyId} device=${device}...`);
   const screen = await project.generate(prompt, device);
@@ -57,8 +57,8 @@ async function main(): Promise<void> {
   await writeFile(path.join(dir, "prompt.txt"), prompt, "utf8");
   await writeJsonAtomic(path.join(dir, "screen.json"), { id: screen.id, device, generatedAt: new Date().toISOString() });
 
-  const htmlUrl = asUrl(await screen.getHtml());
-  const imgUrl = asUrl(await screen.getImage());
+  const htmlUrl = await screen.getHtml();
+  const imgUrl = await screen.getImage();
 
   await ensureDir(path.join(dir, "html"));
   await downloadToFile(htmlUrl, path.join(dir, "html", "index.html"));

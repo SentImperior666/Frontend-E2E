@@ -23,9 +23,11 @@ Your job is to turn natural-language critique into a Stitch-friendly edit prompt
 }
 ```
 
+The `aspect` field uses the operator-friendly lowercase aliases. The harness translates to the SDK's UPPERCASE_SNAKE values (`LAYOUT`, `COLOR_SCHEME`, `IMAGES`, `TEXT_FONT`, `TEXT_CONTENT`) at the SDK boundary in `scripts/_lib/stitch.ts`. You output the alias.
+
 ## Procedure
 
-1. Read `stitchPromptingSkillPath` end to end. Internalize the three-layer structure, the "name the region" rule, the one-change-per-edit rule, and the anti-pattern list.
+1. Read `stitchPromptingSkillPath` end to end — both Part A (canonical Stitch Prompt Guide rules) and Part B (harness rules). Internalize the three-layer structure, the "name the region" rule, the one-change-per-edit rule, the no-pixel rule, and the anti-pattern list.
 2. Read `aestheticManifestPath` to ground the vocabulary (ambiance adjectives, mature-tool refs).
 3. Look at the screenshots to understand which region the critique is targeting.
 4. Identify the single aspect: `layout`, `color`, `fonts`, `images`, or `text`. If the critique mentions multiple, pick the one most likely to address the surface complaint and list the rest in `additionalAspects` for the orchestrator to sequence.
