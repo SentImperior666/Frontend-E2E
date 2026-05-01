@@ -1,0 +1,71 @@
+name: parity
+
+# Runs the parity loop against the target site (Vite + Svelte) on harness PRs
+# that touched a converged story. The target repo is checked out via deploy
+# key so the harness PR's parity test mounts the corresponding ported .svelte
+# file at a known route.
+
+on:
+  pull_request:
+    paths:
+      - "src/components/**"
+      - "src/stories/**"
+      - "dist/tokens/**"
+      - "tests/parity/**"
+
+concurrency:
+  group: parity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    if: secrets.TARGET_REPO_DEPLOY_KEY != ''
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: harness
+      - name: Checkout target repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.TARGET_REPO_SLUG }}
+          ssh-key: ${{ secrets.TARGET_REPO_DEPLOY_KEY }}
+          path: target
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: |
+            harness/pnpm-lock.yaml
+            target/pnpm-lock.yaml
+      - name: Install harness deps
+        working-directory: harness
+        run: pnpm install --frozen-lockfile
+      - name: Install target deps
+        working-directory: target
+        run: pnpm install --frozen-lockfile
+      - name: Sync tokens + assets to target
+        working-directory: harness
+        env:
+          TARGET_REPO_PATH: ${{ github.workspace }}/target
+        run: pnpm sync:target-tokens && pnpm sync:target-assets
+      - name: Build target preview
+        working-directory: target
+        run: pnpm build && (pnpm preview --port 4173 &) && sleep 5
+      - name: Install Playwright
+        working-directory: harness
+        run: pnpm dlx playwright install --with-deps chromium
+      - name: Run parity specs
+        working-directory: harness
+        env:
+          TARGET_REPO_PATH: ${{ github.workspace }}/target
+          PARITY_BASE_URL: http://localhost:4173
+        run: pnpm test:parity
+      - name: Upload parity captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-${{ github.run_id }}
+          path: harness/tests/parity/__captures__

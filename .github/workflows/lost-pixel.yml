@@ -1,0 +1,48 @@
+name: lost-pixel
+
+on:
+  pull_request:
+    paths:
+      - "src/components/**"
+      - "src/stories/**"
+      - "src/tokens/**"
+      - "src/app/globals.css"
+      - "dist/tokens/**"
+      - ".lostpixel/baseline/**"
+      - ".storybook/**"
+
+concurrency:
+  group: lost-pixel-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm dlx playwright install --with-deps chromium
+      - run: pnpm storybook:build
+      - run: pnpm test:visual
+        env:
+          LOST_PIXEL_PROJECT_ID: ${{ secrets.LOST_PIXEL_PROJECT_ID }}
+          LOST_PIXEL_API_KEY: ${{ secrets.LOST_PIXEL_API_KEY }}
+      - name: Upload current + diff artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lost-pixel-${{ github.run_id }}
+          path: |
+            .lostpixel/current
+            .lostpixel/diff
+      - name: Upload to Argos
+        if: always() && env.ARGOS_TOKEN != ''
+        env:
+          ARGOS_TOKEN: ${{ secrets.ARGOS_TOKEN }}
+        run: pnpm dlx @argos-ci/cli upload .lostpixel/current --token "$ARGOS_TOKEN"

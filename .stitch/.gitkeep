@@ -1,0 +1,6 @@
+# Stitch state cache:
+#   projects.json — { purpose: { id, createdAt } }
+#   design-system.json — snapshot of the latest synced DesignSystem
+#   screens/<storyId>/ — { screen.json, prompt.txt, html/index.html, screenshot.png, edit-history.jsonl, variants/ }
+#   galleries/<storyId>-<ts>.html — variant gallery pages
+#   pending-pick.json — written when /design-loop pauses for human variant pick

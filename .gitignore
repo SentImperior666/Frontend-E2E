@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+.next/
+out/
+storybook-static/
+dist/
+build/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+Thumbs.db
+
+# Caches
+.cache/
+.eslintcache
+.tsbuildinfo
+*.tsbuildinfo
+
+# Test artifacts
+.lostpixel/current/
+.lostpixel/diff/
+test-results/
+playwright-report/
+playwright/.cache/
+.lighthouseci/
+
+# Harness-side caches
+.harness/
+.stitch/screens/*/variants/
+.stitch/galleries/
+.stitch/pending-pick.json
+
+# Argos
+.argos/
+
+# Public assets pulled from Stitch CDN (kept committed only when published with a screen)
+# public/assets/stitch/  # uncomment if assets should be regenerated rather than committed

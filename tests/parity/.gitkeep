@@ -1,0 +1,3 @@
+# Parity specs are emitted by /port-to-svelte. Each spec runs against the target
+# site's running preview, captures per-viewport screenshots, and diffs against
+# the workshop's converged renders.

@@ -1,0 +1,64 @@
+name: design-feedback
+
+# Listens to PR comments starting with /design-feedback and dispatches the
+# /design-from-feedback Claude command. The Action expects:
+#   - secrets.CLAUDE_API_KEY (or whichever auth your harness uses for Claude Code)
+#   - secrets.STITCH_API_KEY
+#   - secrets.FIGMA_API_TOKEN
+#   - secrets.TARGET_REPO_DEPLOY_KEY (read-write to target if you want post-back)
+#   - vars.TARGET_REPO_SLUG (owner/repo of the target site)
+#
+# The orchestrator (`/design-from-feedback`) handles parsing, locking, routing.
+# This workflow only delivers the comment payload to a Claude Code session.
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  route:
+    if: ${{ startsWith(github.event.comment.body, '/design-feedback') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with: { version: 9 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm dlx playwright install --with-deps chromium
+      - name: Resolve comment URL
+        id: comment
+        run: |
+          if [ "${{ github.event_name }}" = "issue_comment" ]; then
+            echo "url=repos/${{ github.repository }}/issues/comments/${{ github.event.comment.id }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "url=repos/${{ github.repository }}/pulls/comments/${{ github.event.comment.id }}" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Run /design-from-feedback
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          STITCH_API_KEY: ${{ secrets.STITCH_API_KEY }}
+          FIGMA_API_TOKEN: ${{ secrets.FIGMA_API_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMENT_URL: ${{ steps.comment.outputs.url }}
+        run: |
+          # Implementer: replace this with your preferred Claude Code invocation
+          # (claude CLI, claude-code-action, or self-hosted runner). The command
+          # itself is `/design-from-feedback "$COMMENT_URL"`.
+          echo "TODO: invoke claude with /design-from-feedback $COMMENT_URL"
+          echo "See docs/outer-loop.md for the full Action wiring."
+      - name: Reply on PR with results
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Implementer: post the converged Stitch screenshot + React render here.
+          # See docs/outer-loop.md.
+          echo "TODO: post reply"

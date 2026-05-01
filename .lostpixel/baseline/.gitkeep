@@ -1,0 +1,7 @@
+# Per-story baselines land here:
+#   .lostpixel/baseline/<storyId>/375.png
+#   .lostpixel/baseline/<storyId>/768.png
+#   .lostpixel/baseline/<storyId>/1280.png
+#   .lostpixel/baseline/<storyId>/1920.png
+#   .lostpixel/baseline/<storyId>/_meta.json
+# Source: stitch-render-baseline.ts (Stitch path) or figma-export-baselines.ts (Figma path).

@@ -1,0 +1,17 @@
+@import "tailwindcss";
+@import "../../dist/tokens/tokens.css";
+
+/* Workshop-only ambient styles. Components must not depend on these — anything
+   that ships to the target site must work without globals.css present. */
+
+html,
+body {
+  background: var(--color-parchment-100, #f3e9d2);
+  color: var(--color-ink-900, #1c140d);
+  font-family: var(--font-body, "EB Garamond", serif);
+}
+
+.font-display {
+  font-family: var(--font-display, "Cinzel", serif);
+  font-weight: var(--font-display-weight, 600);
+}
