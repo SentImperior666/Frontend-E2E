@@ -68,7 +68,7 @@ export async function getStitchClient(): Promise<StitchClient> {
   }
   let mod: { stitch?: StitchClient; Stitch?: new (opts?: unknown) => StitchClient };
   try {
-    mod = (await import("@google/stitch-sdk")) as typeof mod;
+    mod = (await import("@google/stitch-sdk")) as unknown as typeof mod;
   } catch (err) {
     throw new Error(
       `@google/stitch-sdk is not installed. Run \`pnpm add @google/stitch-sdk\`. Underlying: ${(err as Error).message}`,

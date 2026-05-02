@@ -31,7 +31,7 @@ interface Graph {
 
 const IGNORE = new Set(["node_modules", ".svelte-kit", "build", "dist", ".git", ".next", ".turbo"]);
 
-async function lazyFastGlob(): Promise<typeof import("fast-glob").default> {
+async function lazyFastGlob(): Promise<typeof import("fast-glob")> {
   try {
     const mod = await import("fast-glob");
     return mod.default;
